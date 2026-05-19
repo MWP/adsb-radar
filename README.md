@@ -35,7 +35,10 @@ This software is part of a project to create an offline (no internet access) air
 ### Build host
 
 ```
-sudo apt install build-essential cmake git libdrm-dev libgbm-dev libzstd-dev zlib1g-dev librtlsdr-dev libusb-1.0-0-dev
+sudo apt install build-essential cmake git libdrm-dev libgbm-dev libzstd-dev \
+    zlib1g-dev librtlsdr-dev libusb-1.0-0-dev libncurses-dev \
+	libsoapysdr-dev libhackrf-dev libbladerf-dev libad9361-dev libiio-dev \
+	libudev-dev libinput-dev libudev1
 ```
 
 All other dependencies (SDL3, SDL3\_ttf, FreeType, cJSON) are fetched and built automatically by CMake. No system SDL or TTF packages are needed or used.

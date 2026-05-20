@@ -8,13 +8,13 @@ The software reads live aircraft data from a [readsb](https://github.com/wiedeho
 
 ---
 
-## The Project
+## The Project (as a whole)
 
-This software is part of a project to create an offline (no internet access) aircraft graphical monitoring station using a [Crystalfontz CFA050A0-PI-MBCT Raspberry Pi CM4/5 display](https://www.crystalfontz.com/product/cfa050a0pimbct-5-inch-720x1280-rpi-cm4-compatible-tft), and an RTL-SDR (or similar) USB device for ADS-B radio data reception.
+This software is part of a project to create a low-power, compact, standalone (offline - no internet access), fast-startup aircraft graphical monitoring station using a [Crystalfontz CFA050A0-PI-MBCT Raspberry Pi CM4/5 display](https://www.crystalfontz.com/product/cfa050a0pimbct-5-inch-720x1280-rpi-cm4-compatible-tft), and an RTL-SDR (or similar) USB device for ADS-B radio data reception.
 
 ---
 
-## Features
+## Software Features
 
 - **Live aircraft tracking** — polls `aircraft.json` over HTTP or reads a local file directly
 - **Altitude colouring** — dots use an HSV hue ramp (red → green → blue → purple) across 0–15 000 m

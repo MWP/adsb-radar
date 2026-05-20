@@ -6,7 +6,7 @@ While designed for small-ish display use, it will also compile and run happily o
 
 The software reads live aircraft data from a [readsb](https://github.com/wiedehopf/readsb) instance (included in build), or [dump1090-fa](https://github.com/flightaware/dump1090) (or similar). An attached serial GPS unit can optionally keep the map centred on the device's current position.
 
-[![example adsb-radar image](exmaple-sm.png)](example.png)
+[![example adsb-radar image](example-sm.png)](example.png)
 
 ---
 

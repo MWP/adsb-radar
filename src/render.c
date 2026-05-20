@@ -601,6 +601,7 @@ static void draw_aircraft_list(AppState *app, Aircraft *snap, int count)
     float line_h = app->config.font_size_pt * 1.75f;
     bool  metric = app->config.units_metric;
     const float PAD = 6.0f;
+    const bool show_rssi = app->config.show_rssi_column;
 
     /* Derive column widths from actual font metrics so they scale with font size
        and DPI.  char_w is an average for DejaVuSans; numeric columns are sized to
@@ -617,12 +618,13 @@ static void draw_aircraft_list(AppState *app, Aircraft *snap, int count)
     int alt_tw = 0, spd_tw = 0, rssi_tw = 0;
     TTF_GetStringSize(lf, metric ? "10000m"  : "39000", 0, &alt_tw,  NULL);
     TTF_GetStringSize(lf, metric ? "1000km/h" : "999kt", 0, &spd_tw,  NULL);
-    TTF_GetStringSize(lf, "-50dB", 0, &rssi_tw, NULL);
+    if (show_rssi) TTF_GetStringSize(lf, "-50dB", 0, &rssi_tw, NULL);
     float col_alt  = (float)alt_tw;
     float col_spd  = (float)spd_tw;
     float col_rssi = (float)rssi_tw;
 
-    float PW = PAD + col_call + col_gap + col_alt + col_gap + col_spd + col_gap + col_rssi + PAD;
+    float PW = PAD + col_call + col_gap + col_alt + col_gap + col_spd + PAD;
+    if (show_rssi) PW += col_gap + col_rssi;
     float px = (float)app->proj.screen_w - PW;
 
     /* Column X positions */
@@ -651,8 +653,10 @@ static void draw_aircraft_list(AppState *app, Aircraft *snap, int count)
     draw_text_f(app, lf, "Alt", x_alt + col_alt - (float)hw, ty, 60, 160, 80, 255);
     TTF_GetStringSize(lf, "Spd", 0, &hw, NULL);
     draw_text_f(app, lf, "Spd", x_spd + col_spd - (float)hw, ty, 60, 160, 80, 255);
-    TTF_GetStringSize(lf, "RSSI", 0, &hw, NULL);
-    draw_text_f(app, lf, "RSSI", x_rssi + col_rssi - (float)hw, ty, 60, 160, 80, 255);
+    if (show_rssi) {
+        TTF_GetStringSize(lf, "RSSI", 0, &hw, NULL);
+        draw_text_f(app, lf, "RSSI", x_rssi + col_rssi - (float)hw, ty, 60, 160, 80, 255);
+    }
     ty += line_h;
     SDL_SetRenderDrawColor(app->renderer, 0, 100, 60, 120);
     SDL_RenderLine(app->renderer, px + 2, ty - 2.0f, px + PW - 2, ty - 2.0f);
@@ -667,7 +671,7 @@ static void draw_aircraft_list(AppState *app, Aircraft *snap, int count)
             else        snprintf(alt_s, sizeof(alt_s), "%d",    (int)ac->alt_baro);
         }
         char spd_s[12] = "---";
-        if (!isnan(ac->gs)) {
+        if (ac->gs >= 0.0f) {
             if (metric) snprintf(spd_s, sizeof(spd_s), "%dkm/h", (int)(ac->gs * 1.852f));
             else        snprintf(spd_s, sizeof(spd_s), "%dkt",   (int)ac->gs);
         }
@@ -688,8 +692,10 @@ static void draw_aircraft_list(AppState *app, Aircraft *snap, int count)
         TTF_GetStringSize(lf, spd_s, 0, &tw, NULL);
         draw_text_f(app, lf, spd_s, x_spd + col_spd - (float)tw, ty, 180, 220, 180, a);
 
-        TTF_GetStringSize(lf, rssi_s, 0, &tw, NULL);
-        draw_text_f(app, lf, rssi_s, x_rssi + col_rssi - (float)tw, ty, 180, 220, 180, a);
+        if (show_rssi) {
+            TTF_GetStringSize(lf, rssi_s, 0, &tw, NULL);
+            draw_text_f(app, lf, rssi_s, x_rssi + col_rssi - (float)tw, ty, 180, 220, 180, a);
+        }
 
         ty += line_h;
     }
@@ -888,13 +894,14 @@ void render_frame(AppState *app)
         SDL_SetRenderDrawColor(app->renderer, dr, dg, db, alpha);
         draw_filled_circle(app->renderer, sx, sy, cfg->aircraft_dot_radius);
 
-        if (!isnan(ac->track)) {
+        if (ac->track >= 1.0f) {
             /* Line length proportional to ground speed;
                heading_line_length is the reference length at 500 kt.
-               Falls back to full length when speed is unknown. */
-            float line_len = (isnan(ac->gs) || ac->gs == 0.0f)
-                           ? 0.0f
-                           : cfg->heading_line_length * ac->gs / 500.0f;
+               Uses > 0 rather than !isnan: ordered comparisons return false
+               for NaN at the hardware level even under -ffast-math. */
+            float line_len = (ac->gs > 1.0f)
+                           ? cfg->heading_line_length * ac->gs / 500.0f
+                           : 0.0f;
 
             if (line_len >= 2.0f) {
                 double track_rad = ac->track * M_PI / 180.0;

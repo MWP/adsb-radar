@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <SDL3/SDL.h>
 
-#define AIRCRAFT_MAX      512
-#define MAX_TRAIL_POINTS  300   /* ~5 min at 1 Hz, ~2.5 min at 2 Hz */
+#define AIRCRAFT_MAX      32 
+#define MAX_TRAIL_POINTS  1024
 
 typedef struct {
     double lat, lon;

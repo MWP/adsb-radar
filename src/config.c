@@ -32,6 +32,7 @@ void config_defaults(Config *cfg)
     cfg->kmsdrm_device_index = 0;
     cfg->show_buttons        = true;
     cfg->show_exit_button    = false;
+    cfg->show_rssi_column    = true;
 
     cfg->map_layer_count = 0;
 
@@ -174,6 +175,8 @@ bool config_load(Config *cfg, const char *path)
             cfg->show_buttons = (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
         else if (MATCH("display", "exit_button"))
             cfg->show_exit_button = (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+        else if (MATCH("display", "show_rssi_column"))
+            cfg->show_rssi_column = (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
 
         /* ── Map layers (new format) ──────────────────────────────── */
         else if (SECT("map")) {

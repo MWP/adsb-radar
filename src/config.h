@@ -35,6 +35,7 @@ typedef struct {
     char  video_driver[32];   /* empty = SDL auto-detect; "kmsdrm", "x11", etc. */
     bool  show_buttons;       /* show on-screen zoom/pan buttons */
     bool  show_exit_button;   /* show on-screen exit button (bottom-left) */
+    bool  show_rssi_column;   /* show RSSI column in the aircraft list panel */
 
     /* Map layers */
     MapLayerConfig map_layers[MAX_MAP_LAYERS];

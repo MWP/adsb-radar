@@ -59,7 +59,7 @@ void render_label(LabelCache *cache,
         else
             snprintf(alt_str, sizeof(alt_str), "%dft", (int)ac->alt_baro);
     }
-    if (!isnan(ac->gs)) {
+    if (ac->gs >= 0.0f) {
         if (metric)
             snprintf(gs_str, sizeof(gs_str), "%dkm/h", (int)(ac->gs * 1.852f));
         else

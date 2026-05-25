@@ -147,9 +147,13 @@ Key sections:
 Two GeoJSON files are included:
 
 - `world_coastlines.geojson` — world coastline polygons
-- `world_airports.geojson` — airport locations
-
+- `world_airports.geojson` — world airport locations
+- `world_cities_500kplus.geojson` - world city locations (500k+ population)
+  
 Additional layers can be added in `[map]` using any GeoJSON FeatureCollection or ESRI Shapefile containing LineString, MultiLineString, Polygon, or MultiPolygon geometry.
+
+The `world_coastlines.geojson` file was sourced from [geojson-maps.kyd.au](https://geojson-maps.kyd.au).
+These maps are derived from Natural Earth data and are in the public domain.
 
 The `world_airports.geojson` file was generated using [overpass-turbo.eu](https://overpass-turbo.eu) with the query:
 ```
@@ -162,8 +166,12 @@ The `world_airports.geojson` file was generated using [overpass-turbo.eu](https:
 out geom;
 ```
 
-The `world_coastlines.geojson` file was sourced from [geojson-maps.kyd.au](https://geojson-maps.kyd.au).
-These maps are derived from Natural Earth data and are in the public domain.
+The `world_cities_500kplus.geojson` file was generated using [overpass-turbo.eu](https://overpass-turbo.eu) with the query:
+```
+[out:json][timeout:900];
+node["place"~"city|town"]["population"~"^[5-9][0-9]{4,}|^[0-9]{6,}$"];
+out body;
+```
 
 ---
 

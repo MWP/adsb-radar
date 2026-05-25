@@ -17,7 +17,11 @@ typedef struct {
     MapSourceType type;
     char          path[512];
     bool          has_color;
-    Uint8         color[4];   /* overrides col_map when has_color is true */
+    Uint8         color[4];          /* overrides col_map when has_color is true */
+    bool          show_names;        /* draw feature name strings */
+    float         point_radius;      /* filled circle radius in px; 0 = default (3) */
+    float         name_font_size_pt; /* 0 = inherit main font size */
+    int           max_names;         /* suppress all names if visible count exceeds this; 0 = unlimited */
 } MapLayerConfig;
 
 typedef struct {

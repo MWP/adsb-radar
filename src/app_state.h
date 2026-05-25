@@ -24,6 +24,7 @@ typedef struct AppState {
 
     AircraftList     aircraft_list;
     MapGeometry     *map_layers[MAX_MAP_LAYERS];
+    TTF_Font        *map_layer_fonts[MAX_MAP_LAYERS]; /* NULL or font for layer names */
     int              map_layer_count;
     ProjectionState  proj;
     LabelCache       label_cache;

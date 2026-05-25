@@ -183,7 +183,21 @@ static bool load_map(AppState *app)
 
         if (geo) {
             map_geometry_reproject(geo, &app->proj);
-            app->map_layers[app->map_layer_count++] = geo;
+            int slot = app->map_layer_count;
+            app->map_layers[slot] = geo;
+            if (lc->show_names) {
+                float sz = lc->name_font_size_pt > 0.0f
+                           ? lc->name_font_size_pt
+                           : app->config.font_size_pt;
+                if (sz == app->config.font_size_pt) {
+                    app->map_layer_fonts[slot] = app->font;
+                } else {
+                    TTF_Font *mf = TTF_OpenFont(app->config.font_path, sz);
+                    if (!mf) mf = app->font;
+                    app->map_layer_fonts[slot] = mf;
+                }
+            }
+            app->map_layer_count++;
         }
     }
 
@@ -295,6 +309,12 @@ void app_state_destroy(AppState *app)
     if (app->text_engine) {
         TTF_DestroyRendererTextEngine(app->text_engine);
         app->text_engine = NULL;
+    }
+    for (int i = 0; i < app->map_layer_count; i++) {
+        TTF_Font *mf = app->map_layer_fonts[i];
+        if (mf && mf != app->font && mf != app->list_font)
+            TTF_CloseFont(mf);
+        app->map_layer_fonts[i] = NULL;
     }
     if (app->list_font && app->list_font != app->font) {
         TTF_CloseFont(app->list_font);

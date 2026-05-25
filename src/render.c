@@ -373,8 +373,12 @@ static void draw_trails(AppState *app)
     SDL_UnlockMutex(app->aircraft_list.mutex);
 }
 
-static void draw_map_layer(SDL_Renderer *renderer, const MapGeometry *geo,
-                            const Uint8 color[4])
+static void draw_map_layer(SDL_Renderer *renderer,
+                            TTF_TextEngine *engine,
+                            const MapGeometry *geo,
+                            const MapLayerConfig *lc,
+                            const Uint8 color[4],
+                            TTF_Font *name_font)
 {
     SDL_SetRenderDrawColor(renderer, color[0], color[1], color[2], color[3]);
     SDL_SetRenderDrawBlendMode(renderer,
@@ -412,6 +416,41 @@ static void draw_map_layer(SDL_Renderer *renderer, const MapGeometry *geo,
             if (sentinel)
                 seg_start = j + 1;
         }
+
+        /* Draw line name at first on-screen point */
+        if (name_font && geo->line_names && geo->line_names[i]) {
+            for (int j = 0; j < pl->npoints; j++) {
+                if (pl->xs[j] >= -9000.0f) {
+                    float th = (float)TTF_GetFontHeight(name_font);
+                    TTF_Text *t = TTF_CreateText(engine, name_font,
+                                                 geo->line_names[i], 0);
+                    if (t) {
+                        TTF_SetTextColor(t, color[0], color[1], color[2], color[3]);
+                        TTF_DrawRendererText(t, pl->xs[j] + 3.0f,
+                                                pl->ys[j] - th * 0.5f);
+                        TTF_DestroyText(t);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    float radius = lc->point_radius > 0.0f ? lc->point_radius : 3.0f;
+    float name_half_h = name_font ? (float)TTF_GetFontHeight(name_font) * 0.5f : 0.0f;
+
+    for (int i = 0; i < geo->npts; i++) {
+        if (geo->pt_xs[i] < -9000.0f) continue;
+        draw_filled_circle(renderer, geo->pt_xs[i], geo->pt_ys[i], radius);
+        if (name_font && geo->pt_names && geo->pt_names[i]) {
+            TTF_Text *t = TTF_CreateText(engine, name_font, geo->pt_names[i], 0);
+            if (t) {
+                TTF_SetTextColor(t, color[0], color[1], color[2], color[3]);
+                TTF_DrawRendererText(t, geo->pt_xs[i] + radius + 2.0f,
+                                        geo->pt_ys[i] - name_half_h);
+                TTF_DestroyText(t);
+            }
+        }
     }
 }
 
@@ -423,8 +462,36 @@ static void draw_map(AppState *app)
     for (int li = 0; li < app->map_layer_count; li++) {
         const MapGeometry    *geo = app->map_layers[li];
         const MapLayerConfig *lc  = &cfg->map_layers[li];
-        const Uint8          *col = lc->has_color ? lc->color : cfg->col_map;
-        draw_map_layer(app->renderer, geo, col);
+        const Uint8 *col       = lc->has_color ? lc->color : cfg->col_map;
+        TTF_Font    *name_font = app->map_layer_fonts[li];
+
+        /* Suppress names when too many would be visible at once */
+        if (name_font && lc->max_names > 0) {
+            float sw = (float)app->proj.screen_w;
+            float sh = (float)app->proj.screen_h;
+            int count = 0;
+            for (int i = 0; i < geo->npts && count <= lc->max_names; i++) {
+                if (geo->pt_names && geo->pt_names[i] &&
+                    geo->pt_xs[i] >= 0.0f && geo->pt_xs[i] <= sw &&
+                    geo->pt_ys[i] >= 0.0f && geo->pt_ys[i] <= sh)
+                    count++;
+            }
+            for (int i = 0; i < geo->nlines && count <= lc->max_names; i++) {
+                if (!geo->line_names || !geo->line_names[i]) continue;
+                const Polyline *pl = &geo->lines[i];
+                for (int j = 0; j < pl->npoints; j++) {
+                    if (pl->xs[j] >= 0.0f && pl->xs[j] <= sw &&
+                        pl->ys[j] >= 0.0f && pl->ys[j] <= sh) {
+                        count++;
+                        break;
+                    }
+                }
+            }
+            if (count > lc->max_names)
+                name_font = NULL;
+        }
+
+        draw_map_layer(app->renderer, app->text_engine, geo, lc, col, name_font);
     }
 }
 

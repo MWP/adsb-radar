@@ -184,12 +184,22 @@ bool config_load(Config *cfg, const char *path)
             char suffix[64];
 
             if (sscanf(key, "layer_%d_%63s", &idx, suffix) == 2 &&
-                idx >= 0 && idx < MAX_MAP_LAYERS &&
-                strcmp(suffix, "color") == 0) {
-                parse_color(val, cfg->map_layers[idx].color);
-                cfg->map_layers[idx].has_color = true;
+                idx >= 0 && idx < MAX_MAP_LAYERS) {
                 if (idx >= cfg->map_layer_count)
                     cfg->map_layer_count = idx + 1;
+                if (strcmp(suffix, "color") == 0) {
+                    parse_color(val, cfg->map_layers[idx].color);
+                    cfg->map_layers[idx].has_color = true;
+                } else if (strcmp(suffix, "show_name") == 0) {
+                    cfg->map_layers[idx].show_names =
+                        (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+                } else if (strcmp(suffix, "point_radius") == 0) {
+                    cfg->map_layers[idx].point_radius = (float)atof(val);
+                } else if (strcmp(suffix, "name_size_pt") == 0) {
+                    cfg->map_layers[idx].name_font_size_pt = (float)atof(val);
+                } else if (strcmp(suffix, "max_names") == 0) {
+                    cfg->map_layers[idx].max_names = atoi(val);
+                }
 
             } else if (sscanf(key, "layer_%d", &idx) == 1 &&
                        idx >= 0 && idx < MAX_MAP_LAYERS) {

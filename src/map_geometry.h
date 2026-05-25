@@ -22,6 +22,15 @@ typedef struct {
     /* per-line index into raw arrays */
     int      *line_start;
     int      *line_len;
+    char    **line_names;  /* heap-allocated name strings or NULL */
+    /* point features (Point / MultiPoint) */
+    double   *pt_lons;     /* raw geographic */
+    double   *pt_lats;
+    int       npts;
+    int       npts_cap;
+    float    *pt_xs;       /* screen-space (reprojected) */
+    float    *pt_ys;
+    char    **pt_names;    /* heap-allocated name strings or NULL */
 } MapGeometry;
 
 MapGeometry *map_geometry_new(void);
@@ -30,7 +39,11 @@ void         map_geometry_free(MapGeometry *g);
 /* Re-project all raw lon/lat into screen coords using current projection. */
 void map_geometry_reproject(MapGeometry *g, const ProjectionState *p);
 
-/* Append a polyline described by arrays of lon/lat pairs. */
+/* Append a polyline described by arrays of lon/lat pairs.  name may be NULL. */
 void map_geometry_add_line(MapGeometry *g,
                             const double *lons, const double *lats,
-                            int npoints);
+                            int npoints, const char *name);
+
+/* Append a single point feature.  name may be NULL. */
+void map_geometry_add_point(MapGeometry *g, double lon, double lat,
+                             const char *name);

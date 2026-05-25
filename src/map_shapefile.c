@@ -136,7 +136,7 @@ MapGeometry *map_shapefile_load(const char *file_path)
             uint32_t end   = (p + 1 < num_parts) ? parts[p + 1] : num_points;
             int len = (int)(end - start);
             if (len >= 2)
-                map_geometry_add_line(g, lons + start, lats + start, len);
+                map_geometry_add_line(g, lons + start, lats + start, len, NULL);
         }
 
         free(parts);

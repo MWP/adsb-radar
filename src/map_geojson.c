@@ -16,7 +16,7 @@ static long file_size(FILE *f)
     return sz;
 }
 
-static void add_linestring(MapGeometry *g, cJSON *coords)
+static void add_linestring(MapGeometry *g, cJSON *coords, const char *name)
 {
     int n = cJSON_GetArraySize(coords);
     if (n < 2) return;
@@ -35,13 +35,13 @@ static void add_linestring(MapGeometry *g, cJSON *coords)
         count++;
     }
     if (count >= 2)
-        map_geometry_add_line(g, lons, lats, count);
+        map_geometry_add_line(g, lons, lats, count, name);
 
     free(lons);
     free(lats);
 }
 
-static void process_geometry(MapGeometry *g, cJSON *geom)
+static void process_geometry(MapGeometry *g, cJSON *geom, const char *name)
 {
     if (!geom) return;
     cJSON *type_j   = cJSON_GetObjectItemCaseSensitive(geom, "type");
@@ -51,24 +51,39 @@ static void process_geometry(MapGeometry *g, cJSON *geom)
     const char *type = type_j->valuestring;
 
     if (strcmp(type, "LineString") == 0) {
-        add_linestring(g, coords_j);
+        add_linestring(g, coords_j, name);
 
     } else if (strcmp(type, "MultiLineString") == 0) {
         cJSON *ring;
         cJSON_ArrayForEach(ring, coords_j)
-            add_linestring(g, ring);
+            add_linestring(g, ring, name);
 
     } else if (strcmp(type, "Polygon") == 0) {
         /* exterior ring is index 0 */
         cJSON *exterior = cJSON_GetArrayItem(coords_j, 0);
-        if (exterior) add_linestring(g, exterior);
+        if (exterior) add_linestring(g, exterior, name);
 
     } else if (strcmp(type, "MultiPolygon") == 0) {
         cJSON *polygon;
         cJSON_ArrayForEach(polygon, coords_j) {
             cJSON *exterior = cJSON_GetArrayItem(polygon, 0);
-            if (exterior) add_linestring(g, exterior);
+            if (exterior) add_linestring(g, exterior, name);
         }
+    } else if (strcmp(type, "Point") == 0) {
+        cJSON *lon_j = cJSON_GetArrayItem(coords_j, 0);
+        cJSON *lat_j = cJSON_GetArrayItem(coords_j, 1);
+        if (lon_j && lat_j)
+            map_geometry_add_point(g, lon_j->valuedouble, lat_j->valuedouble, name);
+
+    } else if (strcmp(type, "MultiPoint") == 0) {
+        cJSON *pt;
+        cJSON_ArrayForEach(pt, coords_j) {
+            cJSON *lon_j = cJSON_GetArrayItem(pt, 0);
+            cJSON *lat_j = cJSON_GetArrayItem(pt, 1);
+            if (lon_j && lat_j)
+                map_geometry_add_point(g, lon_j->valuedouble, lat_j->valuedouble, name);
+        }
+
     } else {
         SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION,
                        "GeoJSON: skipping unsupported geometry type '%s'", type);
@@ -111,17 +126,26 @@ MapGeometry *map_geojson_load(const char *file_path)
         cJSON *features = cJSON_GetObjectItemCaseSensitive(root, "features");
         cJSON *feature;
         cJSON_ArrayForEach(feature, features) {
-            cJSON *geom = cJSON_GetObjectItemCaseSensitive(feature, "geometry");
-            process_geometry(g, geom);
+            cJSON *geom  = cJSON_GetObjectItemCaseSensitive(feature, "geometry");
+            cJSON *props = cJSON_GetObjectItemCaseSensitive(feature, "properties");
+            const char *name = NULL;
+            if (props) {
+                /* cJSON_GetObjectItem is case-insensitive — matches "name"/"NAME"/etc. */
+                cJSON *name_j = cJSON_GetObjectItem(props, "name");
+                if (name_j && cJSON_IsString(name_j) && name_j->valuestring[0])
+                    name = name_j->valuestring;
+            }
+            process_geometry(g, geom, name);
         }
     } else {
         /* Might be a bare geometry object */
-        process_geometry(g, root);
+        process_geometry(g, root, NULL);
     }
 
     cJSON_Delete(root);
 
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                "GeoJSON: loaded %d polylines from '%s'", g->nlines, file_path);
+                "GeoJSON: loaded %d polylines, %d points from '%s'",
+                g->nlines, g->npts, file_path);
     return g;
 }

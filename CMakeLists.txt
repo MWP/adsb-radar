@@ -28,7 +28,7 @@ set(SDL_TRAY     OFF CACHE BOOL "" FORCE)
 set(SDL_HIDAPI   OFF CACHE BOOL "" FORCE)
 set(SDL_SHARED   OFF CACHE BOOL "" FORCE)
 set(SDL_STATIC   ON  CACHE BOOL "" FORCE)
-set(SDL_LIBUDEV   OFF CACHE BOOL "" FORCE)
+set(SDL_LIBUDEV   ON  CACHE BOOL "" FORCE)
 set(SDL_LIBINPUT  ON  CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(SDL3)
 
@@ -85,6 +85,15 @@ target_link_libraries(adsb-radar PRIVATE
     cjson
     m
 )
+
+# ── Hard-link libinput + libudev so SDL's RTLD_DEFAULT probe finds them ───────
+# SDL3 checks for udev/libinput symbols via dlsym(RTLD_DEFAULT) before its own
+# dlopen; they must be in the process image at startup or SDL_Init fails.
+# --push-state/--pop-state scopes --no-as-needed to just these two libraries.
+if(UNIX AND NOT APPLE)
+    target_link_options(adsb-radar PRIVATE
+        "-Wl,--push-state,--no-as-needed,-linput,-ludev,--pop-state")
+endif()
 
 # ── Compiler flags ───────────────────────────────────────────────────────────
 target_compile_options(adsb-radar PRIVATE
